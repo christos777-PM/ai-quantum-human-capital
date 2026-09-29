@@ -48,12 +48,15 @@ Skills evidence
 Management implications
 ```
 
+See the [research-to-prototype methodology](docs/research-to-prototype-methodology.md) for the measurement logic, analytical boundaries, evaluation plan and reproducibility requirements.
+
 ## Current research artifacts
 
 - Research question and scope
 - Theoretical framework
 - Literature-review workspace
 - Workforce capability taxonomy
+- Research-to-prototype methodology
 - Technical prototype linkage
 
 ## Research discipline
@@ -86,7 +89,7 @@ The technical prototype uses synthetic/illustrative data unless a dataset is exp
 
 **[AI Workforce Intelligence](https://github.com/christos777-PM/ai-workforce-intelligence)**
 
-The companion project provides the executable technical layer: Python package, taxonomy, skill extraction, analysis, tests and CI.
+The companion project provides the executable technical layer: Python package, taxonomy, skill extraction, analysis, target-role comparison, tests and CI.
 
 ---
 
