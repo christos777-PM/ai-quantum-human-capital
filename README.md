@@ -55,6 +55,24 @@ Management implications
 - Literature-review workspace
 - Workforce capability taxonomy
 - Technical prototype linkage
+- A reproducible benchmark evaluator for skill-extraction predictions
+
+## Benchmark evaluation
+
+A small, synthetic JSONL benchmark demonstrates how skill-extraction predictions can be evaluated without presenting invented examples as labor-market evidence.
+
+Run the example from the repository root:
+
+```bash
+python scripts/evaluate_benchmark.py \
+  --gold data/benchmark/example.jsonl \
+  --predictions data/benchmark/example_predictions.jsonl \
+  --output /tmp/benchmark-report.json
+```
+
+The evaluator reports per-role and micro precision, recall and F1, plus macro F1. Skill labels are compared as case-insensitive exact-match sets after trimming whitespace. It deliberately does not infer synonyms or semantic equivalence. The benchmark format, metric definitions and limitations are documented in [the benchmark README](data/benchmark/README.md).
+
+**Important:** the bundled records are synthetic smoke-test data, not a representative sample, a model-quality claim, or evidence about the Indian workforce. Empirical conclusions require a documented, appropriately licensed dataset and a manually reviewed annotation protocol.
 
 ## Research discipline
 
@@ -67,7 +85,7 @@ Findings should be grounded in documented sources and clearly separated into:
 - **Research limitations**
 - **Implications for organizations**
 
-The technical prototype uses synthetic/illustrative data unless a dataset is explicitly documented as public and appropriately licensed.
+The technical prototype uses synthetic/illustrative data unless a dataset is explicitly documented as public and appropriately licensed. Do not include personal candidate information.
 
 ## Planned work
 
@@ -79,6 +97,7 @@ The technical prototype uses synthetic/illustrative data unless a dataset is exp
 - [ ] Licensed/public job-data collection
 - [ ] Empirical analysis
 - [ ] Validation of the capability taxonomy
+- [ ] Human-reviewed benchmark labels using a documented protocol
 - [ ] Integration of AI-assisted analysis with transparent evaluation
 - [ ] Research findings and management implications
 
