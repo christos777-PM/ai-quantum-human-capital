@@ -64,7 +64,8 @@ def _metrics(true_positive: int, false_positive: int, false_negative: int) -> di
     recall_denominator = true_positive + false_negative
     precision = true_positive / precision_denominator if precision_denominator else 0.0
     recall = true_positive / recall_denominator if recall_denominator else 0.0
-    f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
+    f1_denominator = 2 * true_positive + false_positive + false_negative
+    f1 = 2 * true_positive / f1_denominator if f1_denominator else 0.0
     return {
         "true_positive": true_positive,
         "false_positive": false_positive,
@@ -83,7 +84,7 @@ def evaluate_records(
 
     Skills are compared as case-insensitive sets after trimming whitespace.
     Micro metrics aggregate counts across all roles; macro_f1 averages the
-    rounded per-role F1 values for a simple role-balanced companion measure.
+    unrounded per-role F1 values and rounds only the final result.
     """
     gold_by_id = _index_records(benchmark_records, "gold_skills", "Benchmark")
     predicted_by_id = _index_records(prediction_records, "predicted_skills", "Predictions")
@@ -102,6 +103,7 @@ def evaluate_records(
         raise ValueError("role_id mismatch: " + "; ".join(details) + ".")
 
     per_role: list[dict[str, Any]] = []
+    unrounded_role_f1: list[float] = []
     total_true_positive = 0
     total_false_positive = 0
     total_false_negative = 0
@@ -113,6 +115,10 @@ def evaluate_records(
         false_positive = len(predicted - gold)
         false_negative = len(gold - predicted)
         metrics = _metrics(true_positive, false_positive, false_negative)
+        f1_denominator = 2 * true_positive + false_positive + false_negative
+        unrounded_role_f1.append(
+            2 * true_positive / f1_denominator if f1_denominator else 0.0
+        )
         per_role.append(
             {
                 "role_id": role_id,
@@ -130,7 +136,7 @@ def evaluate_records(
         total_false_positive,
         total_false_negative,
     )
-    macro_f1 = sum(role["f1"] for role in per_role) / len(per_role)
+    macro_f1 = sum(unrounded_role_f1) / len(unrounded_role_f1)
 
     return {
         "records_evaluated": len(per_role),
@@ -141,7 +147,7 @@ def evaluate_records(
             "matching": "case-insensitive exact match after trimming; skills are treated as sets",
             "zero_denominator": "precision, recall, or F1 is reported as 0 when its denominator is zero",
             "micro": "precision, recall, and F1 are computed from counts aggregated across all roles",
-            "macro_f1": "arithmetic mean of per-role F1 values",
+            "macro_f1": "arithmetic mean of unrounded per-role F1 values, rounded to four decimal places",
         },
     }
 
