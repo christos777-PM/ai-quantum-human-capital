@@ -1,8 +1,10 @@
 """Synthetic research tests for benchmark metrics, not candidate or hiring assessments."""
 
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
-from scripts.evaluate_benchmark import evaluate_records
+from scripts.evaluate_benchmark import evaluate_records, load_jsonl
 
 
 class TestMetrics(unittest.TestCase):
@@ -34,6 +36,23 @@ class TestMetrics(unittest.TestCase):
         )
         self.assertEqual(report["micro"]["f1"], 1.0)
 
+    def test_macro_f1_uses_unrounded_per_role_values(self):
+        first_predictions = ["hit"] + [f"first-false-positive-{i}" for i in range(98)]
+        second_predictions = ["hit"] + [f"second-false-positive-{i}" for i in range(92)]
+        report = evaluate_records(
+            [
+                {"role_id": "sample-001", "gold_skills": ["hit"]},
+                {"role_id": "sample-002", "gold_skills": ["hit"]},
+            ],
+            [
+                {"role_id": "sample-001", "predicted_skills": first_predictions},
+                {"role_id": "sample-002", "predicted_skills": second_predictions},
+            ],
+        )
+        self.assertEqual(report["per_role"][0]["f1"], 0.02)
+        self.assertEqual(report["per_role"][1]["f1"], 0.0213)
+        self.assertEqual(report["macro_f1"], 0.0206)
+
     def test_rejects_duplicate_identifiers(self):
         benchmark = [
             {"role_id": "sample", "gold_skills": ["python"]},
@@ -52,6 +71,20 @@ class TestMetrics(unittest.TestCase):
     def test_rejects_empty_benchmark(self):
         with self.assertRaisesRegex(ValueError, "no records"):
             evaluate_records([], [])
+
+    def test_load_jsonl_rejects_non_object_record(self):
+        with TemporaryDirectory() as temporary_directory:
+            path = Path(temporary_directory) / "invalid.jsonl"
+            path.write_text('["not", "an object"]\n', encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "each JSONL record must be an object"):
+                load_jsonl(path)
+
+    def test_load_jsonl_reports_malformed_line(self):
+        with TemporaryDirectory() as temporary_directory:
+            path = Path(temporary_directory) / "invalid.jsonl"
+            path.write_text('{"role_id": "ok"}\n{invalid json}\n', encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "invalid.jsonl:2: invalid JSON"):
+                load_jsonl(path)
 
 
 if __name__ == "__main__":
