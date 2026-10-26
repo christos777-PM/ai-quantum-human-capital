@@ -1,0 +1,45 @@
+name: Workforce integration demo
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out research repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check out companion workforce prototype
+        uses: actions/checkout@v4
+        with:
+          repository: christos777-PM/ai-workforce-intelligence
+          ref: main
+          path: companion/ai-workforce-intelligence
+      - name: Install companion CLI
+        run: python -m pip install -e companion/ai-workforce-intelligence
+      - name: Run research unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Run end-to-end synthetic evaluation
+        run: |
+          python scripts/run_workforce_demo.py \
+            --jobs-csv companion/ai-workforce-intelligence/data/sample_jobs.csv \
+            --gold data/benchmark/workforce_demo_gold.jsonl \
+            --output /tmp/workforce-demo-report.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("/tmp/workforce-demo-report.json").read_text(encoding="utf-8"))
+          assert report["records_evaluated"] == 5, report
+          assert 0.0 <= report["micro"]["precision"] <= 1.0, report
+          assert 0.0 <= report["micro"]["recall"] <= 1.0, report
+          assert 0.0 <= report["micro"]["f1"] <= 1.0, report
+          assert 0.0 <= report["macro_f1"] <= 1.0, report
+          print(f"Integrated {report['records_evaluated']} synthetic roles; micro-F1={report['micro']['f1']}")
+          PY
