@@ -72,7 +72,21 @@ python scripts/evaluate_benchmark.py \
 
 The evaluator reports per-role and micro precision, recall and F1, plus macro F1. Skill labels are compared as case-insensitive exact-match sets after trimming whitespace. It deliberately does not infer synonyms or semantic equivalence. The benchmark format, metric definitions and limitations are documented in [the benchmark README](data/benchmark/README.md).
 
-**Important:** the bundled records are synthetic smoke-test data, not a representative sample, a model-quality claim, or evidence about the Indian workforce. Empirical conclusions require a documented, appropriately licensed dataset and a manually reviewed annotation protocol.
+### End-to-end companion integration
+
+The repository also includes a smoke-test runner that calls the installed `workforce-intel` CLI, consumes its JSONL predictions, and passes them to the evaluator:
+
+```bash
+python -m pip install -e ../ai-workforce-intelligence
+python scripts/run_workforce_demo.py \
+  --jobs-csv ../ai-workforce-intelligence/data/sample_jobs.csv \
+  --gold data/benchmark/workforce_demo_gold.jsonl \
+  --output /tmp/workforce-demo-report.json
+```
+
+The integration workflow checks out the companion repository and runs this path in CI. The five-role fixture intentionally exposes exact-match gaps such as abbreviations and plural forms. Its scores are useful for checking that export, role-ID matching and metric calculation are wired together, **not** for claiming real-world extractor quality.
+
+**Important:** all bundled records are synthetic smoke-test data, not a representative sample, a model-quality claim, or evidence about the Indian workforce. Empirical conclusions require a documented, appropriately licensed dataset and a manually reviewed annotation protocol.
 
 ## Research discipline
 
@@ -98,7 +112,7 @@ The technical prototype uses synthetic/illustrative data unless a dataset is exp
 - [ ] Empirical analysis
 - [ ] Validation of the capability taxonomy
 - [ ] Human-reviewed benchmark labels using a documented protocol
-- [ ] Integration of AI-assisted analysis with transparent evaluation
+- [x] Synthetic integration smoke test connecting the rule-based extractor to transparent evaluation\n- [ ] Held-out evaluation using a licensed dataset and human-reviewed reference labels
 - [ ] Research findings and management implications
 
 ## Companion project
