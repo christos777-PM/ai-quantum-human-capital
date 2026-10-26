@@ -5,7 +5,8 @@ This directory contains a small **synthetic example** for exercising the benchma
 ## Files
 
 - `example.jsonl`: reference records with `role_id` and `gold_skills`. The optional `source` and `description` fields preserve context but are not used by the metric calculation.
-- `example_predictions.jsonl`: example predictions keyed by the same `role_id`, with `predicted_skills`.\n- `workforce_demo_gold.jsonl`: synthetic reference labels for the five-role companion integration smoke test.
+- `example_predictions.jsonl`: example predictions keyed by the same `role_id`, with `predicted_skills`.
+- `workforce_demo_gold.jsonl`: synthetic reference labels for the five-role companion integration smoke test.
 
 Each non-empty line is a JSON object. The `role_id` must be non-empty and unique within each file. Skill arrays must contain non-empty strings. Skills are trimmed, case-folded and compared as sets, so duplicates and capitalization differences do not affect the score.
 
