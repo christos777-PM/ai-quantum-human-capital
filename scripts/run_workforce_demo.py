@@ -13,7 +13,10 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-if __package__:\n    from .evaluate_benchmark import evaluate_records, load_jsonl\nelse:  # Support direct execution as `python scripts/run_workforce_demo.py`.\n    from evaluate_benchmark import evaluate_records, load_jsonl
+if __package__:
+    from .evaluate_benchmark import evaluate_records, load_jsonl
+else:  # Support direct execution as `python scripts/run_workforce_demo.py`.
+    from evaluate_benchmark import evaluate_records, load_jsonl
 
 
 def run_workforce_demo(
