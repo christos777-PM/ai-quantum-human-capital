@@ -10,6 +10,7 @@ import argparse
 import json
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 from scripts.evaluate_benchmark import evaluate_records, load_jsonl
@@ -30,7 +31,7 @@ def run_workforce_demo(
         )
 
     gold_records = load_jsonl(gold_path)
-    with __import__("tempfile").TemporaryDirectory(prefix="workforce-demo-") as directory:
+    with tempfile.TemporaryDirectory(prefix="workforce-demo-") as directory:
         predictions_path = Path(directory) / "predictions.jsonl"
         args = [
             executable,
