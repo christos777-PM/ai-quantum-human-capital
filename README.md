@@ -70,7 +70,7 @@ python scripts/evaluate_benchmark.py \
   --output /tmp/benchmark-report.json
 ```
 
-The evaluator reports per-role and micro precision, recall and F1, plus macro F1. Skill labels are compared as case-insensitive exact-match sets after trimming whitespace. It deliberately does not infer synonyms or semantic equivalence. The benchmark format, metric definitions and limitations are documented in [the benchmark README](data/benchmark/README.md).
+The evaluator reports per-role precision, recall and F1 with explicit matched, false-positive and false-negative skill labels, plus micro metrics and macro F1. Skill labels are compared as case-insensitive exact-match sets after trimming whitespace. It deliberately does not infer synonyms or semantic equivalence. The benchmark format, metric definitions and limitations are documented in [the benchmark README](data/benchmark/README.md).
 
 ### End-to-end companion integration
 
