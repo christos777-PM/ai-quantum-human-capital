@@ -84,7 +84,7 @@ python scripts/run_workforce_demo.py \
   --output /tmp/workforce-demo-report.json
 ```
 
-The integration workflow checks out the companion repository and runs this path in CI. The five-role fixture exercises common plural forms handled by the companion's explicit alias map and retains one intentional abbreviation miss: `AI` is not yet normalized to the canonical `artificial intelligence` label. The pinned scores are regression checks for this synthetic fixture only, **not** evidence of real-world extractor quality.
+The integration workflow checks out the companion repository and runs this path in CI. The five-role synthetic fixture covers common plural forms and the explicit `AI` abbreviation alias. The workflow pins expected per-run and aggregate metrics, including the absence of false-positive and false-negative labels in this deliberately small fixture. These assertions protect against regressions in known examples; they do not measure generalization to unseen descriptions.
 
 **Important:** all bundled records are synthetic smoke-test data, not a representative sample, a model-quality claim, or evidence about the Indian workforce. Empirical conclusions require a documented, appropriately licensed dataset and a manually reviewed annotation protocol.
 
