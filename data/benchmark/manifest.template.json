@@ -1,0 +1,30 @@
+{
+  "dataset_id": "replace-with-stable-dataset-id",
+  "version": "0.1.0",
+  "data_status": "template",
+  "source_name": null,
+  "source_url": null,
+  "license_name": null,
+  "license_url": null,
+  "terms_reviewed_at": null,
+  "retrieved_at": null,
+  "collection_method": "replace-with-manual-or-api",
+  "content_hash_algorithm": "sha256",
+  "taxonomy_version": "record-a-commit-or-release",
+  "annotation_protocol_version": "0.1.0",
+  "annotator_count": null,
+  "double_annotated_fraction": null,
+  "agreement_method": null,
+  "adjudication_method": null,
+  "deduplication_method": null,
+  "split_strategy": null,
+  "record_counts": {
+    "collected": null,
+    "included": null,
+    "excluded": null,
+    "development": null,
+    "held_out": null
+  },
+  "personal_data_review": "not-assessed",
+  "notes": "Template only. Do not claim licensing, annotation, or empirical validation until each check is completed."
+}
