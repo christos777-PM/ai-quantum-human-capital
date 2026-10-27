@@ -43,5 +43,8 @@ jobs:
           assert report["micro"]["recall"] == 0.9773, report
           assert report["micro"]["f1"] == 0.9885, report
           assert report["macro_f1"] == 0.9882, report
+          ai_pm = next(role for role in report["per_role"] if role["role_id"] == "ai-project-manager")
+          assert ai_pm["false_negative_skills"] == ["artificial intelligence"], report
+          assert ai_pm["false_positive_skills"] == [], report
           print(f"Integrated {report['records_evaluated']} synthetic roles; micro-F1={report['micro']['f1']}")
           PY

@@ -29,6 +29,17 @@ class TestMetrics(unittest.TestCase):
         self.assertEqual(report["micro"]["f1"], 0.7692)
         self.assertEqual(report["macro_f1"], 0.7619)
 
+    def test_per_role_report_lists_matched_and_error_skills(self):
+        report = evaluate_records(
+            [{"role_id": "sample", "gold_skills": ["python", "artificial intelligence"]}],
+            [{"role_id": "sample", "predicted_skills": ["python", "sql"]}],
+        )
+
+        role = report["per_role"][0]
+        self.assertEqual(role["matched_skills"], ["python"])
+        self.assertEqual(role["false_positive_skills"], ["sql"])
+        self.assertEqual(role["false_negative_skills"], ["artificial intelligence"])
+
     def test_normalizes_skill_labels_as_sets(self):
         report = evaluate_records(
             [{"role_id": "sample", "gold_skills": [" Python "]}],
