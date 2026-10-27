@@ -36,10 +36,12 @@ jobs:
           from pathlib import Path
 
           report = json.loads(Path("/tmp/workforce-demo-report.json").read_text(encoding="utf-8"))
+          # Synthetic regression fixture: one known false negative remains
+          # because "AI" is not yet an alias for "artificial intelligence".
           assert report["records_evaluated"] == 5, report
-          assert 0.0 <= report["micro"]["precision"] <= 1.0, report
-          assert 0.0 <= report["micro"]["recall"] <= 1.0, report
-          assert 0.0 <= report["micro"]["f1"] <= 1.0, report
-          assert 0.0 <= report["macro_f1"] <= 1.0, report
+          assert report["micro"]["precision"] == 1.0, report
+          assert report["micro"]["recall"] == 0.9773, report
+          assert report["micro"]["f1"] == 0.9885, report
+          assert report["macro_f1"] == 0.9882, report
           print(f"Integrated {report['records_evaluated']} synthetic roles; micro-F1={report['micro']['f1']}")
           PY

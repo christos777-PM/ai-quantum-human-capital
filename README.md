@@ -84,7 +84,7 @@ python scripts/run_workforce_demo.py \
   --output /tmp/workforce-demo-report.json
 ```
 
-The integration workflow checks out the companion repository and runs this path in CI. The five-role fixture intentionally exposes exact-match gaps such as abbreviations and plural forms. Its scores are useful for checking that export, role-ID matching and metric calculation are wired together, **not** for claiming real-world extractor quality.
+The integration workflow checks out the companion repository and runs this path in CI. The five-role fixture exercises common plural forms handled by the companion's explicit alias map and retains one intentional abbreviation miss: `AI` is not yet normalized to the canonical `artificial intelligence` label. The pinned scores are regression checks for this synthetic fixture only, **not** evidence of real-world extractor quality.
 
 **Important:** all bundled records are synthetic smoke-test data, not a representative sample, a model-quality claim, or evidence about the Indian workforce. Empirical conclusions require a documented, appropriately licensed dataset and a manually reviewed annotation protocol.
 
@@ -112,7 +112,8 @@ The technical prototype uses synthetic/illustrative data unless a dataset is exp
 - [ ] Empirical analysis
 - [ ] Validation of the capability taxonomy
 - [ ] Human-reviewed benchmark labels using a documented protocol
-- [x] Synthetic integration smoke test connecting the rule-based extractor to transparent evaluation\n- [ ] Held-out evaluation using a licensed dataset and human-reviewed reference labels
+- [x] Synthetic integration smoke test connecting the rule-based extractor to transparent evaluation
+- [ ] Held-out evaluation using a licensed dataset and human-reviewed reference labels
 - [ ] Research findings and management implications
 
 ## Companion project

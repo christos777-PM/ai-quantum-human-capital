@@ -54,3 +54,7 @@ The runner invokes `workforce-intel --predictions-jsonl`, validates role-ID alig
 6. Do not include personal candidate information or make individual hiring/suitability decisions from these metrics.
 
 The bundled data is only a deterministic smoke test. It does not validate the taxonomy, the extractor, or any real-world workforce claim.
+
+### Current integration regression target
+
+With the companion extractor's explicit plural aliases, the five-role fixture is expected to report micro precision `1.0000`, micro recall `0.9773`, micro F1 `0.9885`, and macro F1 `0.9882`. One known false negative remains: `AI` in the synthetic description is not yet normalized to the canonical `artificial intelligence` label. These exact values are regression targets for this fixture only, not evidence of generalization or labor-market accuracy.
