@@ -23,7 +23,7 @@ python scripts/evaluate_benchmark.py \
 
 The report includes:
 
-- **Per-role metrics:** true positives, false positives, false negatives, precision, recall and F1.
+- **Per-role metrics:** matched skills, false-positive skills, false-negative skills, counts, precision, recall and F1. The three skill-label lists are sorted for deterministic reports.
 - **Micro metrics:** counts aggregated across all roles before calculating precision, recall and F1.
 - **Macro F1:** arithmetic mean of the unrounded per-role F1 values, rounded to four decimal places.
 
