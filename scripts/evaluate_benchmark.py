@@ -124,6 +124,9 @@ def evaluate_records(
                 "role_id": role_id,
                 "gold_skill_count": len(gold),
                 "predicted_skill_count": len(predicted),
+                "matched_skills": sorted(gold & predicted),
+                "false_positive_skills": sorted(predicted - gold),
+                "false_negative_skills": sorted(gold - predicted),
                 **metrics,
             }
         )
