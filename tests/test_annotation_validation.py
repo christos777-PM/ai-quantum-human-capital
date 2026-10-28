@@ -1,8 +1,12 @@
 """Tests for taxonomy membership and annotation evidence validation."""
 
 import unittest
+from pathlib import Path
 
 from scripts.validate_annotations import load_taxonomy, validate_annotation_records
+
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def record(**overrides):
@@ -30,7 +34,7 @@ class TestAnnotationValidation(unittest.TestCase):
 
     def test_bundled_taxonomy_contains_expected_canonical_labels(self):
         skills, version = load_taxonomy(
-            "data/benchmark/taxonomy-v1.json"
+            ROOT / "data" / "benchmark" / "taxonomy-v1.json"
         )
         self.assertIn("artificial intelligence", skills)
         self.assertIn("rest api", skills)
