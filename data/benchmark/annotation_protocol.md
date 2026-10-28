@@ -35,6 +35,32 @@ Reference JSONL records use `role_id` and `gold_skills`. Keep IDs stable between
 
 Optional metadata may include a source class, collection date, taxonomy version, annotation status, or a pointer to a separate adjudication log. Do not put personal candidate data in the benchmark. Do not include full source text or source URLs in a public repository unless the source terms permit it.
 
+### Evidence-linked annotation records
+
+For annotation work, use the stricter record format accepted by `scripts/validate_annotations.py`:
+
+```json
+{
+  "role_id": "stable-record-id",
+  "description": "The exact description text supplied to the extractor.",
+  "gold_skills": ["python"],
+  "evidence": [
+    {"skill": "python", "quote": "Python"}
+  ],
+  "annotation_status": "draft"
+}
+```
+
+Each gold label must have at least one evidence quote copied from the description. Quotes are checked after case-folding and whitespace normalization. Evidence entries cannot refer to labels absent from `gold_skills`; duplicate labels and duplicate role IDs are rejected. An empty `gold_skills` list is valid when the description contains no taxonomy skills.
+
+Run the validator before using annotations:
+
+```bash
+python scripts/validate_annotations.py --input data/benchmark/annotation-example.jsonl
+```
+
+For a release candidate, add `--require-adjudicated`; every record must then carry `"annotation_status": "adjudicated"`. This is a workflow gate only. It does **not** verify semantic correctness, taxonomy membership, source licensing, independent review, or whether adjudication was performed honestly. Those still require human review and the completed provenance manifest. The committed annotation example is synthetic and marked `draft`, not empirical or human-reviewed data.
+
 ## 5. Provenance and licensing
 
 For every empirical dataset version, complete a copy of `manifest.template.json` and retain the evidence needed to substantiate each field.
@@ -69,6 +95,7 @@ Before calling a benchmark empirical, confirm:
 - [ ] IDs are unique, stable, and aligned with predictions.
 - [ ] Duplicate and near-duplicate handling is documented.
 - [ ] Annotation protocol and taxonomy versions are frozen.
+- [ ] Every gold label has source-text evidence and ambiguous cases are recorded.
 - [ ] Independent annotation and adjudication are recorded.
 - [ ] Development and held-out split decisions are documented.
 - [ ] No prohibited personal data or unlicensed text is committed.
