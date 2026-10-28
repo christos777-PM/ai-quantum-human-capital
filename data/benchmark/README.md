@@ -10,7 +10,7 @@ This directory contains small **synthetic examples** for exercising the benchmar
 - `annotation-example.jsonl`: one synthetic evidence-linked annotation record, intentionally marked `draft`.
 - `annotation_protocol.md`: labeling, evidence, adjudication, provenance and held-out evaluation rules for future empirical work.
 - `manifest.template.json`: machine-readable template for recording dataset source, license review, taxonomy version, annotation and split details.
-- `taxonomy-v1.json`: frozen snapshot of canonical labels from the companion extractor taxonomy at commit `2d1192cc`. Update this snapshot deliberately when the source taxonomy changes.
+- `taxonomy-v1.json`: frozen snapshot of canonical labels from the companion extractor taxonomy at source commit `633da3ef`. Update this snapshot deliberately when the source taxonomy changes.
 
 Each non-empty line in evaluator JSONL is a JSON object. The `role_id` must be non-empty and unique within each file. Skill arrays must contain non-empty strings. Skills are trimmed, case-folded and compared as sets, so duplicates and capitalization differences do not affect the score.
 
