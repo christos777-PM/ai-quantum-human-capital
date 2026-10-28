@@ -27,7 +27,7 @@ _VALID_STATUSES = {"draft", "reviewed", "adjudicated"}
 
 def _normalize_text(value: str) -> str:
     """Normalize case and whitespace for quote-presence checks."""
-    return re.sub(r"\\s+", " ", value).strip().casefold()
+    return re.sub(r"\s+", " ", value).strip().casefold()
 
 
 def load_taxonomy(path: str | Path) -> tuple[set[str], str]:
