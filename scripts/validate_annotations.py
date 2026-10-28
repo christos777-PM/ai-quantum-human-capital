@@ -1,4 +1,4 @@
-"""Validate evidence links in human-reviewed skill annotation JSONL.
+""""Validate evidence links in human-reviewed skill annotation JSONL.
 
 This checks record structure and whether each canonical label has a quote
 present in the supplied description. It cannot establish that the label is
