@@ -1,0 +1,1 @@
+{"role_id":"synthetic-annotation-001","source":"synthetic","description":"Synthetic example: Python and REST APIs support project coordination.","gold_skills":["python","rest api"],"evidence":[{"skill":"python","quote":"Python"},{"skill":"rest api","quote":"REST APIs"}],"annotation_status":"draft"}
