@@ -10,20 +10,23 @@ This directory contains small **synthetic examples** for exercising the benchmar
 - `annotation-example.jsonl`: one synthetic evidence-linked annotation record, intentionally marked `draft`.
 - `annotation_protocol.md`: labeling, evidence, adjudication, provenance and held-out evaluation rules for future empirical work.
 - `manifest.template.json`: machine-readable template for recording dataset source, license review, taxonomy version, annotation and split details.
+- `taxonomy-v1.json`: frozen snapshot of canonical labels from the companion extractor taxonomy at commit `2d1192cc`. Update this snapshot deliberately when the source taxonomy changes.
 
 Each non-empty line in evaluator JSONL is a JSON object. The `role_id` must be non-empty and unique within each file. Skill arrays must contain non-empty strings. Skills are trimmed, case-folded and compared as sets, so duplicates and capitalization differences do not affect the score.
 
-## Validate annotation evidence
+## Validate annotation evidence and taxonomy membership
 
-Before evaluating human annotations, validate that each canonical label is linked to a quote present in its source description:
+Before evaluating human annotations, validate that each canonical label is in the frozen taxonomy snapshot and linked to a quote present in its source description:
 
 ```bash
 python scripts/validate_annotations.py --input data/benchmark/annotation-example.jsonl
 ```
 
-The validator rejects duplicate record IDs and labels, missing evidence, quotes absent from the description, and evidence for labels not included in `gold_skills`. Empty label sets are permitted. For a release candidate, use `--require-adjudicated` to require each record's status to be `adjudicated`.
+The bundled taxonomy snapshot is used by default. To validate against another reviewed taxonomy version, pass `--taxonomy path/to/taxonomy.json`. The file must contain a non-empty `taxonomy_version` and a unique `canonical_skills` list.
 
-This is a structural evidence check, not proof of semantic label correctness, taxonomy membership, licensing, or independent review. The bundled annotation record is synthetic and marked `draft`; it does not represent completed annotation work.
+The validator rejects duplicate record IDs and labels, labels absent from the canonical taxonomy, missing evidence, quotes absent from the description, and evidence for labels not included in `gold_skills`. Empty label sets are permitted. For a release candidate, use `--require-adjudicated` to require each record's status to be `adjudicated`.
+
+This is a structural and taxonomy-membership check, not proof of semantic label correctness, source licensing, independent review, or honest adjudication. The taxonomy is a frozen copy of the companion repository, so reviewers should compare its recorded source commit with the intended extractor version. The bundled annotation record is synthetic and marked `draft`; it does not represent completed annotation work.
 
 ## Run the metric example
 
