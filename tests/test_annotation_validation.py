@@ -1,8 +1,8 @@
-"""Tests for annotation evidence validation, not for semantic label quality."""
+"""Tests for taxonomy membership and annotation evidence validation."""
 
 import unittest
 
-from scripts.validate_annotations import validate_annotation_records
+from scripts.validate_annotations import load_taxonomy, validate_annotation_records
 
 
 def record(**overrides):
@@ -21,11 +21,37 @@ def record(**overrides):
 
 
 class TestAnnotationValidation(unittest.TestCase):
-    def test_valid_record_returns_summary(self):
+    def test_valid_record_returns_summary_with_taxonomy_version(self):
         report = validate_annotation_records([record()])
         self.assertEqual(report["records_validated"], 1)
         self.assertEqual(report["skill_labels_validated"], 2)
         self.assertEqual(report["annotation_status_counts"], {"draft": 1})
+        self.assertEqual(report["taxonomy_version"], "aw-intelligence@2d1192cc")
+
+    def test_bundled_taxonomy_contains_expected_canonical_labels(self):
+        skills, version = load_taxonomy(
+            "data/benchmark/taxonomy-v1.json"
+        )
+        self.assertIn("artificial intelligence", skills)
+        self.assertIn("rest api", skills)
+        self.assertEqual(version, "aw-intelligence@2d1192cc")
+
+    def test_rejects_label_not_in_canonical_taxonomy(self):
+        item = record(
+            description="Synthetic example: quantum supremacy research.",
+            gold_skills=["quantum supremacy"],
+            evidence=[{"skill": "quantum supremacy", "quote": "quantum supremacy"}],
+        )
+        with self.assertRaisesRegex(ValueError, "not in taxonomy"):
+            validate_annotation_records([item])
+
+    def test_custom_taxonomy_is_case_insensitive(self):
+        report = validate_annotation_records(
+            [record(gold_skills=["PYTHON", "REST API"])],
+            allowed_skills={"Python", "REST API"},
+            taxonomy_version="test-taxonomy-v1",
+        )
+        self.assertEqual(report["taxonomy_version"], "test-taxonomy-v1")
 
     def test_quote_matching_ignores_case_and_whitespace(self):
         item = record(
