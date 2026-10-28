@@ -1,16 +1,16 @@
-"""Validate evidence links in human-reviewed skill annotation JSONL.
+"""Validate evidence links and taxonomy membership in skill annotation JSONL.
 
-This checks record structure and whether each canonical label has a quote
-present in the supplied description. It cannot establish that the label is
-semantically correct or that an annotator/reviewer acted independently.
+This checks record structure, canonical labels, and whether each label has a
+quote present in the supplied description. It cannot establish semantic
+correctness or independent review.
 """
-
 from __future__ import annotations
 
 import argparse
 import json
 import re
 from collections import Counter
+from pathlib import Path
 from typing import Any, Iterable
 
 try:
@@ -19,26 +19,56 @@ except ImportError:  # Support direct execution as a script.
     from evaluate_benchmark import load_jsonl
 
 
+DEFAULT_TAXONOMY_PATH = (
+    Path(__file__).resolve().parents[1] / "data" / "benchmark" / "taxonomy-v1.json"
+)
 _VALID_STATUSES = {"draft", "reviewed", "adjudicated"}
 
 
 def _normalize_text(value: str) -> str:
     """Normalize case and whitespace for quote-presence checks."""
-    return re.sub(r"\s+", " ", value).strip().casefold()
+    return re.sub(r"\\s+", " ", value).strip().casefold()
+
+
+def load_taxonomy(path: str | Path) -> tuple[set[str], str]:
+    """Load a versioned snapshot of canonical skills and its version label."""
+    taxonomy = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(taxonomy, dict):
+        raise ValueError("Taxonomy file must contain a JSON object.")
+
+    version = taxonomy.get("taxonomy_version")
+    skills = taxonomy.get("canonical_skills")
+    if not isinstance(version, str) or not version.strip():
+        raise ValueError("Taxonomy must contain a non-empty taxonomy_version.")
+    if not isinstance(skills, list) or not skills:
+        raise ValueError("Taxonomy must contain a non-empty canonical_skills list.")
+    if any(not isinstance(skill, str) or not skill.strip() for skill in skills):
+        raise ValueError("Taxonomy canonical_skills must be non-empty strings.")
+
+    normalized = [skill.strip().casefold() for skill in skills]
+    if len(normalized) != len(set(normalized)):
+        raise ValueError("Taxonomy contains duplicate canonical skills.")
+    return set(normalized), version.strip()
 
 
 def validate_annotation_records(
     records: Iterable[dict[str, Any]],
     *,
     require_adjudicated: bool = False,
+    allowed_skills: set[str] | None = None,
+    taxonomy_version: str | None = None,
 ) -> dict[str, Any]:
-    """Validate annotation structure and evidence-quote presence.
+    """Validate record structure, taxonomy membership, and evidence quotes.
 
     Each record requires role_id, description, gold_skills, and evidence.
-    Evidence is a list of {skill, quote} objects. Every gold label must have
-    at least one quote that appears in the description after case/whitespace
-    normalization. Empty gold_skills is allowed when evidence is empty.
+    Evidence is a list of {skill, quote} objects. Every gold label must be in
+    the versioned canonical taxonomy and have a quote present in description.
     """
+    if allowed_skills is None:
+        allowed_skills, default_version = load_taxonomy(DEFAULT_TAXONOMY_PATH)
+        taxonomy_version = taxonomy_version or default_version
+    else:
+        allowed_skills = {skill.strip().casefold() for skill in allowed_skills}
     seen_ids: set[str] = set()
     status_counts: Counter[str] = Counter()
     total_labels = 0
@@ -69,6 +99,13 @@ def validate_annotation_records(
         normalized_skills = [skill.strip().casefold() for skill in skills]
         if len(normalized_skills) != len(set(normalized_skills)):
             raise ValueError(f"Annotation record {role_id!r} contains duplicate gold_skills.")
+
+        unknown_skills = sorted(set(normalized_skills) - allowed_skills)
+        if unknown_skills:
+            raise ValueError(
+                f"Annotation record {role_id!r} has gold_skills not in taxonomy "
+                f"{taxonomy_version or '<custom>'}: {unknown_skills}."
+            )
 
         evidence = record.get("evidence")
         if not isinstance(evidence, list):
@@ -140,19 +177,26 @@ def validate_annotation_records(
         "records_validated": record_count,
         "skill_labels_validated": total_labels,
         "annotation_status_counts": dict(sorted(status_counts.items())),
+        "taxonomy_version": taxonomy_version,
         "require_adjudicated": require_adjudicated,
         "validation_scope": (
-            "structure, unique role IDs, label/evidence alignment, and quote presence; "
-            "not semantic correctness, taxonomy membership, licensing, or reviewer independence"
+            "structure, unique role IDs, canonical taxonomy membership, "
+            "label/evidence alignment, and quote presence; not semantic correctness, "
+            "licensing, or reviewer independence"
         ),
     }
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Validate annotation JSONL evidence quotes before benchmark evaluation."
+        description="Validate annotation JSONL taxonomy labels and evidence quotes."
     )
     parser.add_argument("--input", required=True, help="Annotation JSONL file")
+    parser.add_argument(
+        "--taxonomy",
+        default=str(DEFAULT_TAXONOMY_PATH),
+        help="Versioned taxonomy snapshot JSON (defaults to the bundled snapshot).",
+    )
     parser.add_argument(
         "--require-adjudicated",
         action="store_true",
@@ -165,9 +209,12 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
+        allowed_skills, taxonomy_version = load_taxonomy(args.taxonomy)
         report = validate_annotation_records(
             load_jsonl(args.input),
             require_adjudicated=args.require_adjudicated,
+            allowed_skills=allowed_skills,
+            taxonomy_version=taxonomy_version,
         )
     except (OSError, ValueError) as exc:
         parser.error(str(exc))
