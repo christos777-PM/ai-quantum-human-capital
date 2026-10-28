@@ -30,7 +30,7 @@ class TestAnnotationValidation(unittest.TestCase):
         self.assertEqual(report["records_validated"], 1)
         self.assertEqual(report["skill_labels_validated"], 2)
         self.assertEqual(report["annotation_status_counts"], {"draft": 1})
-        self.assertEqual(report["taxonomy_version"], "aw-intelligence@2d1192cc")
+        self.assertEqual(report["taxonomy_version"], "aw-intelligence@633da3ef")
 
     def test_bundled_taxonomy_contains_expected_canonical_labels(self):
         skills, version = load_taxonomy(
@@ -38,7 +38,7 @@ class TestAnnotationValidation(unittest.TestCase):
         )
         self.assertIn("artificial intelligence", skills)
         self.assertIn("rest api", skills)
-        self.assertEqual(version, "aw-intelligence@2d1192cc")
+        self.assertEqual(version, "aw-intelligence@633da3ef")
 
     def test_rejects_label_not_in_canonical_taxonomy(self):
         item = record(
