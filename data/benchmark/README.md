@@ -7,12 +7,25 @@ This directory contains small **synthetic examples** for exercising the benchmar
 - `example.jsonl`: reference records with `role_id` and `gold_skills`. The optional `source` and `description` fields preserve context but are not used by the metric calculation.
 - `example_predictions.jsonl`: example predictions keyed by the same `role_id`, with `predicted_skills`.
 - `workforce_demo_gold.jsonl`: synthetic reference labels for the five-role companion integration smoke test.
-- `annotation_protocol.md`: labeling, adjudication, provenance and held-out evaluation rules for future empirical work.
+- `annotation-example.jsonl`: one synthetic evidence-linked annotation record, intentionally marked `draft`.
+- `annotation_protocol.md`: labeling, evidence, adjudication, provenance and held-out evaluation rules for future empirical work.
 - `manifest.template.json`: machine-readable template for recording dataset source, license review, taxonomy version, annotation and split details.
 
-Each non-empty line is a JSON object. The `role_id` must be non-empty and unique within each file. Skill arrays must contain non-empty strings. Skills are trimmed, case-folded and compared as sets, so duplicates and capitalization differences do not affect the score.
+Each non-empty line in evaluator JSONL is a JSON object. The `role_id` must be non-empty and unique within each file. Skill arrays must contain non-empty strings. Skills are trimmed, case-folded and compared as sets, so duplicates and capitalization differences do not affect the score.
 
-## Run the example
+## Validate annotation evidence
+
+Before evaluating human annotations, validate that each canonical label is linked to a quote present in its source description:
+
+```bash
+python scripts/validate_annotations.py --input data/benchmark/annotation-example.jsonl
+```
+
+The validator rejects duplicate record IDs and labels, missing evidence, quotes absent from the description, and evidence for labels not included in `gold_skills`. Empty label sets are permitted. For a release candidate, use `--require-adjudicated` to require each record's status to be `adjudicated`.
+
+This is a structural evidence check, not proof of semantic label correctness, taxonomy membership, licensing, or independent review. The bundled annotation record is synthetic and marked `draft`; it does not represent completed annotation work.
+
+## Run the metric example
 
 From the repository root:
 
