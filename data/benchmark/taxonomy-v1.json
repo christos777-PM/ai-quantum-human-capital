@@ -1,9 +1,9 @@
 {
   "taxonomy_id": "ai-workforce-intelligence-skill-taxonomy",
-  "taxonomy_version": "aw-intelligence@2d1192cc",
+  "taxonomy_version": "aw-intelligence@633da3ef",
   "source_repository": "https://github.com/christos777-PM/ai-workforce-intelligence",
   "source_path": "src/aw_intelligence/taxonomy.py",
-  "source_commit": "2d1192cc795e8b6a2e97246e3ed7177f4a9d479e",
+  "source_commit": "633da3ef0858d2edaba72b0ff1d1165865ee85b6",
   "canonical_skills": [
     "artificial intelligence",
     "machine learning",
