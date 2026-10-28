@@ -10,7 +10,7 @@ The objective is to record which skills from a fixed, versioned taxonomy are exp
 
 ## 2. Labeling rules
 
-1. **Use canonical taxonomy labels.** Every gold label must exist in the taxonomy version recorded for the dataset.
+1. **Use canonical taxonomy labels.** Every gold label must exist in the taxonomy version recorded for the dataset. The evidence validator checks membership against the frozen snapshot in `taxonomy-v1.json`; record that snapshot's version in any annotation release.
 2. **Require textual evidence.** Include a skill when the description explicitly names it as a tool, method, technology, capability, qualification, or work responsibility. Do not infer skills from an employer name, product name, job seniority, or what a role would normally require.
 3. **Apply only approved aliases.** Map a surface form to a canonical label only when that mapping exists in the versioned alias table. For example, `AI` maps to `artificial intelligence`, `APIs` maps to `api`, and `LLMs` maps to `llm`. Do not silently invent synonyms during annotation.
 4. **Resolve overlapping phrases consistently.** Follow the extractor's longest-phrase policy. For `REST APIs`, label `rest api` rather than also labeling the overlapping `api`. If the text separately mentions `REST APIs and APIs`, both canonical labels may be present.
@@ -45,13 +45,13 @@ For annotation work, use the stricter record format accepted by `scripts/validat
   "description": "The exact description text supplied to the extractor.",
   "gold_skills": ["python"],
   "evidence": [
-    {"skill": "python", "quote": "Python"}
+    { "skill": "python", "quote": "Python" }
   ],
   "annotation_status": "draft"
 }
 ```
 
-Each gold label must have at least one evidence quote copied from the description. Quotes are checked after case-folding and whitespace normalization. Evidence entries cannot refer to labels absent from `gold_skills`; duplicate labels and duplicate role IDs are rejected. An empty `gold_skills` list is valid when the description contains no taxonomy skills.
+Each gold label must have at least one evidence quote copied from the description. Quotes are checked after case-folding and whitespace normalization. Gold labels must also belong to the versioned canonical taxonomy snapshot. Evidence entries cannot refer to labels absent from `gold_skills`; duplicate labels and duplicate role IDs are rejected. An empty `gold_skills` list is valid when the description contains no taxonomy skills.
 
 Run the validator before using annotations:
 
@@ -59,7 +59,7 @@ Run the validator before using annotations:
 python scripts/validate_annotations.py --input data/benchmark/annotation-example.jsonl
 ```
 
-For a release candidate, add `--require-adjudicated`; every record must then carry `"annotation_status": "adjudicated"`. This is a workflow gate only. It does **not** verify semantic correctness, taxonomy membership, source licensing, independent review, or whether adjudication was performed honestly. Those still require human review and the completed provenance manifest. The committed annotation example is synthetic and marked `draft`, not empirical or human-reviewed data.
+For a release candidate, add `--require-adjudicated`; every record must then carry `"annotation_status": "adjudicated"`. This is a workflow gate only. It does **not** verify semantic correctness, source licensing, independent review, or whether adjudication was performed honestly. Those still require human review and the completed provenance manifest. The committed annotation example is synthetic and marked `draft`, not empirical or human-reviewed data.
 
 ## 5. Provenance and licensing
 
@@ -95,7 +95,7 @@ Before calling a benchmark empirical, confirm:
 - [ ] IDs are unique, stable, and aligned with predictions.
 - [ ] Duplicate and near-duplicate handling is documented.
 - [ ] Annotation protocol and taxonomy versions are frozen.
-- [ ] Every gold label has source-text evidence and ambiguous cases are recorded.
+- [ ] Every gold label belongs to the canonical taxonomy and has source-text evidence; ambiguous cases are recorded.
 - [ ] Independent annotation and adjudication are recorded.
 - [ ] Development and held-out split decisions are documented.
 - [ ] No prohibited personal data or unlicensed text is committed.
