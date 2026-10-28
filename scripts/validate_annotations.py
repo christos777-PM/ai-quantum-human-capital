@@ -1,4 +1,4 @@
-""""Validate evidence links in human-reviewed skill annotation JSONL.
+"""Validate evidence links in human-reviewed skill annotation JSONL.
 
 This checks record structure and whether each canonical label has a quote
 present in the supplied description. It cannot establish that the label is
@@ -24,7 +24,7 @@ _VALID_STATUSES = {"draft", "reviewed", "adjudicated"}
 
 def _normalize_text(value: str) -> str:
     """Normalize case and whitespace for quote-presence checks."""
-    return re.sub(r"\\s+", " ", value).strip().casefold()
+    return re.sub(r"\s+", " ", value).strip().casefold()
 
 
 def validate_annotation_records(
