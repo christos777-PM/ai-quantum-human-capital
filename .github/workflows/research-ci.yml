@@ -18,6 +18,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
+      - name: Smoke-test annotation taxonomy and evidence validation
+        run: |
+          python scripts/validate_annotations.py --input data/benchmark/annotation-example.jsonl
       - name: Smoke-test benchmark evaluator
         run: |
           python scripts/evaluate_benchmark.py \
