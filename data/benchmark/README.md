@@ -11,6 +11,7 @@ This directory contains small **synthetic examples** for exercising the benchmar
 - `annotation_protocol.md`: labeling, evidence, adjudication, provenance and held-out evaluation rules for future empirical work.
 - `manifest.template.json`: machine-readable template for recording dataset source, license review, taxonomy version, annotation and split details.
 - `taxonomy-v1.json`: frozen snapshot of canonical labels from the companion extractor taxonomy at source commit `633da3ef`. Update this snapshot deliberately when the source taxonomy changes.
+- `splits/development.example.jsonl` and `splits/held_out.example.jsonl`: synthetic fixtures for testing the split-integrity preflight.
 
 Each non-empty line in evaluator JSONL is a JSON object. The `role_id` must be non-empty and unique within each file. Skill arrays must contain non-empty strings. Skills are trimmed, case-folded and compared as sets, so duplicates and capitalization differences do not affect the score.
 
@@ -30,17 +31,17 @@ This is a structural and taxonomy-membership check, not proof of semantic label 
 
 ## Check development/held-out split leakage
 
-Before reporting held-out metrics, check that the development and held-out files do not reuse role IDs or exact duplicate text:
+Before reporting held-out metrics, check that the development and held-out files do not reuse role IDs or exact duplicate content:
 
 ```bash
 python scripts/validate_splits.py \
-  --development data/development.jsonl \
-  --held-out data/held-out.jsonl
+  --development data/benchmark/splits/development.example.jsonl \
+  --held-out data/benchmark/splits/held_out.example.jsonl
 ```
 
 The validator rejects empty splits, duplicate role IDs within or across files, repeated content within either split, and exact content matches across splits. It fingerprints `description` or `text` after whitespace and case normalization; when raw text cannot be retained, a caller-supplied 64-character `content_sha256` can be used instead. The report lists offending IDs without printing source text.
 
-This is a leakage preflight, not a guarantee of independence. It does not detect paraphrases or near-duplicates, and records without text or a content hash can only be checked for role-ID overlap. A passing result does not establish licensing, annotation quality, representativeness or statistical independence. CI exercises the command with the repository's synthetic fixtures only.
+This is a leakage preflight, not a guarantee of independence. It does not detect paraphrases or near-duplicates, and records without text or a content hash can only be checked for role-ID overlap. A passing result does not establish licensing, annotation quality, representativeness or statistical independence. CI exercises the command with synthetic fixtures only.
 
 ## Run the metric example
 
