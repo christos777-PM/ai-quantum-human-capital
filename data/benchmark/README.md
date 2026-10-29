@@ -8,6 +8,7 @@ This directory contains small **synthetic examples** for exercising the benchmar
 - `example_predictions.jsonl`: example predictions keyed by the same `role_id`, with `predicted_skills`.
 - `workforce_demo_gold.jsonl`: synthetic reference labels for the five-role companion integration smoke test.
 - `annotation-example.jsonl`: one synthetic evidence-linked annotation record, intentionally marked `draft`.
+- `annotation-a.example.jsonl` and `annotation-b.example.jsonl`: synthetic fixtures for testing pairwise agreement metrics; they are not human annotator results.
 - `annotation_protocol.md`: labeling, evidence, adjudication, provenance and held-out evaluation rules for future empirical work.
 - `manifest.template.json`: machine-readable template for recording dataset source, license review, taxonomy version, annotation and split details.
 - `taxonomy-v1.json`: frozen snapshot of canonical labels from the companion extractor taxonomy at source commit `633da3ef`. Update this snapshot deliberately when the source taxonomy changes.
@@ -29,6 +30,21 @@ The validator rejects duplicate record IDs and labels, labels absent from the ca
 
 This is a structural and taxonomy-membership check, not proof of semantic label correctness, source licensing, independent review, or honest adjudication. The taxonomy is a frozen copy of the companion repository, so reviewers should compare its recorded source commit with the intended extractor version. The bundled annotation record is synthetic and marked `draft`; it does not represent completed annotation work.
 
+## Compare two annotators before adjudication
+
+Use the pairwise agreement report on two independent annotation files before adjudication:
+
+```bash
+python scripts/compare_annotations.py \
+  --annotator-a path/to/annotator-a.jsonl \
+  --annotator-b path/to/annotator-b.jsonl \
+  --output /tmp/annotation-agreement.json
+```
+
+The report includes exact-set agreement, mean role-level Jaccard, micro Jaccard, and per-role lists of labels assigned only by either annotator. Both files must contain the same unique role IDs and each record must contain a `gold_skills` list. Label matching is exact after trimming and case-folding; synonyms are not inferred. Empty/empty skill sets are assigned Jaccard 1.0, which should be considered when interpreting the average.
+
+These descriptive measures quantify consistency, not correctness. They are not chance-corrected and cannot prove that annotators worked independently or that adjudication was unbiased. See [the annotation agreement guide](../../docs/annotation-agreement.md) for interpretation and limitations. The committed A/B files are synthetic CI fixtures only, not empirical inter-annotator agreement results.
+
 ## Check development/held-out split leakage
 
 Before reporting held-out metrics, check that the development and held-out files do not reuse role IDs or exact duplicate content:
@@ -39,7 +55,7 @@ python scripts/validate_splits.py \
   --held-out data/benchmark/splits/held_out.example.jsonl
 ```
 
-The validator rejects empty splits, duplicate role IDs within or across files, repeated content within either split, and exact content matches across splits. It fingerprints `description` or `text` after whitespace and case normalization; when raw text cannot be retained, a caller-supplied 64-character `content_sha256` can be used instead. The report lists offending IDs without printing source text.
+The validator rejects empty splits, duplicate role IDs within or across files, repeated content within either split, and exact content matches across splits. It fingerprints `description` or `text` after Unicode NFKC, whitespace and case normalization; when raw text cannot be retained, a caller-supplied 64-character `content_sha256` can be used instead. The report lists offending IDs without printing source text.
 
 This is a leakage preflight, not a guarantee of independence. It does not detect paraphrases or near-duplicates, and records without text or a content hash can only be checked for role-ID overlap. A passing result does not establish licensing, annotation quality, representativeness or statistical independence. CI exercises the command with synthetic fixtures only.
 
@@ -54,13 +70,7 @@ python scripts/evaluate_benchmark.py \
   --output /tmp/benchmark-report.json
 ```
 
-The report includes:
-
-- **Per-role metrics:** matched skills, false-positive skills, false-negative skills, counts, precision, recall and F1. The three skill-label lists are sorted for deterministic reports.
-- **Micro metrics:** counts aggregated across all roles before calculating precision, recall and F1.
-- **Macro F1:** arithmetic mean of the unrounded per-role F1 values, rounded to four decimal places.
-
-A metric with a zero denominator is reported as `0`. Matching is exact after trimming and case-folding; no synonym or semantic matching is attempted. Missing or extra role IDs, duplicate IDs, malformed JSONL and invalid skill arrays are rejected.
+The report includes per-role precision, recall and F1, matched labels, false positives, false negatives, micro metrics and macro F1. Skill matching is exact after trimming and case-folding; no synonym or semantic matching is attempted. Missing or extra role IDs, duplicate IDs, malformed JSONL and invalid skill arrays are rejected.
 
 ## End-to-end companion integration
 
@@ -74,11 +84,9 @@ python scripts/run_workforce_demo.py \
   --output /tmp/workforce-demo-report.json
 ```
 
-The runner invokes `workforce-intel --predictions-jsonl`, validates role-ID alignment through the evaluator, and writes the same per-role and aggregate metrics. CI checks this path against the companion repository's current `main` branch. The five-role reference file is synthetic and exercises the current explicit plural and AI abbreviation aliases.
+The runner invokes `workforce-intel --predictions-jsonl`, validates role-ID alignment through the evaluator, and writes per-role and aggregate metrics. CI checks this path against the companion repository's current `main` branch. The five-role reference file is synthetic and exercises the current explicit plural and AI abbreviation aliases.
 
-### Current integration regression target
-
-With the companion extractor's explicit aliases, the five-role fixture is expected to report micro precision `1.0000`, micro recall `1.0000`, micro F1 `1.0000`, and macro F1 `1.0000`, with no false-positive or false-negative labels. These exact values are regression targets for this fixed synthetic fixture only, not evidence of generalization or labor-market accuracy.
+With the companion extractor's explicit aliases, the five-role fixture is expected to report micro precision, recall, F1 and macro F1 of `1.0000`, with no false-positive or false-negative labels. These exact values are regression targets for this fixed synthetic fixture only, not evidence of generalization or labor-market accuracy.
 
 ## Research-quality requirements before empirical use
 
@@ -89,8 +97,9 @@ At minimum:
 1. Use public, appropriately licensed or synthetic source material and verify terms before republishing text.
 2. Define and version the canonical skill taxonomy before annotating the evaluation set.
 3. Have human reviewers apply a written annotation guide; record disagreements and adjudication.
-4. Keep the benchmark version and prediction method/configuration fixed when comparing runs.
-5. Separate development examples from held-out evaluation records to reduce leakage.
-6. Do not include personal candidate information or make individual hiring/suitability decisions from these metrics.
+4. Record pre-adjudication agreement from independent annotations, including the agreement method and double-annotation coverage.
+5. Keep the benchmark version and prediction method/configuration fixed when comparing runs.
+6. Separate development examples from held-out evaluation records to reduce leakage.
+7. Do not include personal candidate information or make individual hiring/suitability decisions from these metrics.
 
 The bundled data is only a deterministic smoke test. It does not validate the taxonomy, the extractor, or any real-world workforce claim.
