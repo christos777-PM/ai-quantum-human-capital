@@ -26,6 +26,13 @@ jobs:
           python scripts/validate_splits.py \
             --development data/benchmark/splits/development.example.jsonl \
             --held-out data/benchmark/splits/held_out.example.jsonl
+      - name: Smoke-test pairwise annotation agreement
+        run: |
+          python scripts/compare_annotations.py \
+            --annotator-a data/benchmark/annotator-a.example.jsonl \
+            --annotator-b data/benchmark/annotator-b.example.jsonl \
+            --output /tmp/annotation-agreement.json
+          python -c "import json; report=json.load(open('/tmp/annotation-agreement.json', encoding='utf-8')); assert report['records_compared'] == 3; assert report['exact_set_agreement'] == 0.6667; assert report['mean_role_jaccard'] == 0.8333; assert report['micro_jaccard'] == 0.75; print('Synthetic annotation-agreement smoke test passed')"
       - name: Smoke-test benchmark evaluator
         run: |
           python scripts/evaluate_benchmark.py \
