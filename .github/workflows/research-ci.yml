@@ -21,6 +21,11 @@ jobs:
       - name: Smoke-test annotation taxonomy and evidence validation
         run: |
           python scripts/validate_annotations.py --input data/benchmark/annotation-example.jsonl
+      - name: Smoke-test split leakage validator
+        run: |
+          python scripts/validate_splits.py \
+            --development data/benchmark/splits/development.example.jsonl \
+            --held-out data/benchmark/splits/held_out.example.jsonl
       - name: Smoke-test benchmark evaluator
         run: |
           python scripts/evaluate_benchmark.py \
