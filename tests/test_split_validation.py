@@ -14,7 +14,15 @@ class TestValidateSplits(unittest.TestCase):
         self.assertTrue(report["passed"])
         self.assertEqual(report["content_fingerprints_checked"], 2)
 
-    def test_overlapping_role_id_fails(self):
+    def test_overlapping_role_id_fails_case_insensitively(self):
+        with self.assertRaisesRegex(ValueError, "duplicate role_id"):
+            validate_splits(
+                [{"role_id": "same", "description": "Development text"},
+                 {"role_id": "SAME", "description": "Different text"}],
+                [{"role_id": "test-1", "description": "Held-out text"}],
+            )
+
+    def test_role_id_overlap_across_splits_fails(self):
         report = validate_splits(
             [{"role_id": "same", "gold_skills": ["python"]}],
             [{"role_id": "same", "gold_skills": ["python"]}],
@@ -32,6 +40,14 @@ class TestValidateSplits(unittest.TestCase):
             report["cross_split_duplicate_content"],
             [{"development_role_ids": ["dev-1"], "held_out_role_ids": ["test-1"]}],
         )
+
+    def test_unicode_compatibility_equivalence_is_detected(self):
+        report = validate_splits(
+            [{"role_id": "dev-1", "description": "Build with ＡＰＩ tools."}],
+            [{"role_id": "test-1", "description": "Build with API tools."}],
+        )
+        self.assertFalse(report["passed"])
+        self.assertEqual(len(report["cross_split_duplicate_content"]), 1)
 
     def test_duplicate_text_within_one_split_fails(self):
         report = validate_splits(
