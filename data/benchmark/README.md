@@ -8,7 +8,7 @@ This directory contains small **synthetic examples** for exercising the benchmar
 - `example_predictions.jsonl`: example predictions keyed by the same `role_id`, with `predicted_skills`.
 - `workforce_demo_gold.jsonl`: synthetic reference labels for the five-role companion integration smoke test.
 - `annotation-example.jsonl`: one synthetic evidence-linked annotation record, intentionally marked `draft`.
-- `annotation-a.example.jsonl` and `annotation-b.example.jsonl`: synthetic fixtures for testing pairwise agreement metrics; they are not human annotator results.
+- `annotator-a.example.jsonl` and `annotator-b.example.jsonl`: synthetic fixtures for testing pairwise agreement metrics; they are not human annotator results.
 - `annotation_protocol.md`: labeling, evidence, adjudication, provenance and held-out evaluation rules for future empirical work.
 - `manifest.template.json`: machine-readable template for recording dataset source, license review, taxonomy version, annotation and split details.
 - `taxonomy-v1.json`: frozen snapshot of canonical labels from the companion extractor taxonomy at source commit `633da3ef`. Update this snapshot deliberately when the source taxonomy changes.
