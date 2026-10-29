@@ -1,8 +1,8 @@
 """Check benchmark development/held-out split integrity.
 
 This is a leakage preflight, not proof of statistical independence. It detects
-reused role IDs and exact duplicate text (after whitespace/case normalization),
-or matching caller-supplied SHA-256 content fingerprints.
+reused role IDs and exact duplicate text after Unicode compatibility, case, and
+whitespace normalization, or matching caller-supplied SHA-256 content hashes.
 """
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ import hashlib
 import json
 import re
 import sys
+import unicodedata
 from collections import defaultdict
-from pathlib import Path
 from typing import Any, Iterable
 
 try:
@@ -31,9 +31,10 @@ def _role_index(records: Iterable[dict[str, Any]], split_name: str) -> dict[str,
         if not isinstance(role_id, str) or not role_id.strip():
             raise ValueError(f"{split_name} record {index} must have a non-empty role_id.")
         role_id = role_id.strip()
-        if role_id in indexed:
+        normalized_id = role_id.casefold()
+        if normalized_id in indexed:
             raise ValueError(f"{split_name} contains duplicate role_id: {role_id!r}.")
-        indexed[role_id] = record
+        indexed[normalized_id] = record
     return indexed
 
 
@@ -54,28 +55,23 @@ def _content_fingerprint(record: dict[str, Any], *, split_name: str, role_id: st
     if not isinstance(text, str) or not text.strip():
         return None
 
-    normalized = re.sub(r"\s+", " ", text).strip().casefold()
+    compatible = unicodedata.normalize("NFKC", text)
+    normalized = re.sub(r"\s+", " ", compatible).strip().casefold()
     if not normalized:
         return None
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
-def _duplicate_groups(
+def _fingerprint_groups(
     indexed: dict[str, dict[str, Any]], split_name: str
-) -> tuple[dict[str, list[str]], int]:
-    by_fingerprint: dict[str, list[str]] = defaultdict(list)
-    checked = 0
-    for role_id, record in indexed.items():
+) -> dict[str, list[str]]:
+    groups: dict[str, list[str]] = defaultdict(list)
+    for normalized_id, record in indexed.items():
+        role_id = record["role_id"].strip()
         fingerprint = _content_fingerprint(record, split_name=split_name, role_id=role_id)
         if fingerprint is not None:
-            by_fingerprint[fingerprint].append(role_id)
-            checked += 1
-    duplicates = {
-        fingerprint: sorted(role_ids)
-        for fingerprint, role_ids in by_fingerprint.items()
-        if len(role_ids) > 1
-    }
-    return duplicates, checked
+            groups[fingerprint].append(role_id)
+    return dict(groups)
 
 
 def validate_splits(
@@ -86,25 +82,27 @@ def validate_splits(
     development = _role_index(development_records, "Development")
     held_out = _role_index(held_out_records, "Held-out")
 
-    dev_duplicates, dev_checked = _duplicate_groups(development, "Development")
-    held_duplicates, held_checked = _duplicate_groups(held_out, "Held-out")
+    dev_by_fingerprint = _fingerprint_groups(development, "Development")
+    held_by_fingerprint = _fingerprint_groups(held_out, "Held-out")
+    dev_duplicates = {
+        fingerprint: sorted(ids)
+        for fingerprint, ids in dev_by_fingerprint.items()
+        if len(ids) > 1
+    }
+    held_duplicates = {
+        fingerprint: sorted(ids)
+        for fingerprint, ids in held_by_fingerprint.items()
+        if len(ids) > 1
+    }
+
     overlapping_ids = sorted(set(development) & set(held_out))
-
-    dev_by_fingerprint: dict[str, list[str]] = defaultdict(list)
-    held_by_fingerprint: dict[str, list[str]] = defaultdict(list)
-    for fingerprint, role_ids in _fingerprint_groups(development, "Development").items():
-        dev_by_fingerprint[fingerprint].extend(role_ids)
-    for fingerprint, role_ids in _fingerprint_groups(held_out, "Held-out").items():
-        held_by_fingerprint[fingerprint].extend(role_ids)
-
-    cross_duplicates = []
-    for fingerprint in sorted(set(dev_by_fingerprint) & set(held_by_fingerprint)):
-        cross_duplicates.append(
-            {
-                "development_role_ids": sorted(dev_by_fingerprint[fingerprint]),
-                "held_out_role_ids": sorted(held_by_fingerprint[fingerprint]),
-            }
-        )
+    cross_duplicates = [
+        {
+            "development_role_ids": sorted(dev_by_fingerprint[fingerprint]),
+            "held_out_role_ids": sorted(held_by_fingerprint[fingerprint]),
+        }
+        for fingerprint in sorted(set(dev_by_fingerprint) & set(held_by_fingerprint))
+    ]
 
     checks = {
         "development_non_empty": bool(development),
@@ -118,37 +116,21 @@ def validate_splits(
         "passed": all(checks.values()),
         "development_records": len(development),
         "held_out_records": len(held_out),
-        "content_fingerprints_checked": dev_checked + held_checked,
+        "content_fingerprints_checked": sum(map(len, dev_by_fingerprint.values()))
+        + sum(map(len, held_by_fingerprint.values())),
         "overlapping_role_ids": overlapping_ids,
         "within_split_duplicate_content": {
-            "development": [
-                {"role_ids": role_ids}
-                for _, role_ids in sorted(dev_duplicates.items())
-            ],
-            "held_out": [
-                {"role_ids": role_ids}
-                for _, role_ids in sorted(held_duplicates.items())
-            ],
+            "development": [{"role_ids": ids} for _, ids in sorted(dev_duplicates.items())],
+            "held_out": [{"role_ids": ids} for _, ids in sorted(held_duplicates.items())],
         },
         "cross_split_duplicate_content": cross_duplicates,
         "checks": checks,
         "limitations": [
-            "Content matching detects exact text after whitespace and case normalization, not near-duplicates or paraphrases.",
+            "Content matching detects exact text after Unicode NFKC, whitespace, and case normalization, not near-duplicates or paraphrases.",
             "Records without description, text, or content_sha256 can only be checked for role-ID overlap.",
             "A passing report does not establish source licensing, annotation quality, representativeness, or statistical independence.",
         ],
     }
-
-
-def _fingerprint_groups(
-    indexed: dict[str, dict[str, Any]], split_name: str
-) -> dict[str, list[str]]:
-    groups: dict[str, list[str]] = defaultdict(list)
-    for role_id, record in indexed.items():
-        fingerprint = _content_fingerprint(record, split_name=split_name, role_id=role_id)
-        if fingerprint is not None:
-            groups[fingerprint].append(role_id)
-    return dict(groups)
 
 
 def build_parser() -> argparse.ArgumentParser:
