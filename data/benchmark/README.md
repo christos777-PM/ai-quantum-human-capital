@@ -28,6 +28,20 @@ The validator rejects duplicate record IDs and labels, labels absent from the ca
 
 This is a structural and taxonomy-membership check, not proof of semantic label correctness, source licensing, independent review, or honest adjudication. The taxonomy is a frozen copy of the companion repository, so reviewers should compare its recorded source commit with the intended extractor version. The bundled annotation record is synthetic and marked `draft`; it does not represent completed annotation work.
 
+## Check development/held-out split leakage
+
+Before reporting held-out metrics, check that the development and held-out files do not reuse role IDs or exact duplicate text:
+
+```bash
+python scripts/validate_splits.py \
+  --development data/development.jsonl \
+  --held-out data/held-out.jsonl
+```
+
+The validator rejects empty splits, duplicate role IDs within or across files, repeated content within either split, and exact content matches across splits. It fingerprints `description` or `text` after whitespace and case normalization; when raw text cannot be retained, a caller-supplied 64-character `content_sha256` can be used instead. The report lists offending IDs without printing source text.
+
+This is a leakage preflight, not a guarantee of independence. It does not detect paraphrases or near-duplicates, and records without text or a content hash can only be checked for role-ID overlap. A passing result does not establish licensing, annotation quality, representativeness or statistical independence. CI exercises the command with the repository's synthetic fixtures only.
+
 ## Run the metric example
 
 From the repository root:
