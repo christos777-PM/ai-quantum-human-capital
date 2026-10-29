@@ -24,8 +24,8 @@ jobs:
       - name: Smoke-test split leakage validator
         run: |
           python scripts/validate_splits.py \
-            --development data/benchmark/example.jsonl \
-            --held-out data/benchmark/workforce_demo_gold.jsonl
+            --development data/benchmark/splits/development.example.jsonl \
+            --held-out data/benchmark/splits/held_out.example.jsonl
       - name: Smoke-test benchmark evaluator
         run: |
           python scripts/evaluate_benchmark.py \
