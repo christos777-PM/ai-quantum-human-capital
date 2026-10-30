@@ -1,7 +1,7 @@
 """Compare two independent skill-annotation JSONL files.
 
-Reports set-level agreement for multi-label annotations. This measures
-consistency between annotation files; it does not establish correctness,
+Reports set-level and per-skill agreement for multi-label annotations.
+These measures quantify consistency; they do not establish correctness,
 independence, or adjudication quality.
 """
 from __future__ import annotations
@@ -55,6 +55,57 @@ def _index_annotations(
     if not indexed:
         raise ValueError(f"{annotator_name} contains no annotation records.")
     return indexed
+
+
+def _per_skill_agreement(
+    skill: str,
+    annotator_a: dict[str, tuple[str, set[str]]],
+    annotator_b: dict[str, tuple[str, set[str]]],
+) -> dict[str, Any]:
+    """Calculate one-vs-rest agreement and Cohen's kappa for one skill."""
+    both_present = 0
+    only_annotator_a = 0
+    only_annotator_b = 0
+    both_absent = 0
+
+    for role_id in annotator_a:
+        in_a = skill in annotator_a[role_id][1]
+        in_b = skill in annotator_b[role_id][1]
+        if in_a and in_b:
+            both_present += 1
+        elif in_a:
+            only_annotator_a += 1
+        elif in_b:
+            only_annotator_b += 1
+        else:
+            both_absent += 1
+
+    total = both_present + only_annotator_a + only_annotator_b + both_absent
+    a_present = both_present + only_annotator_a
+    b_present = both_present + only_annotator_b
+    a_absent = only_annotator_b + both_absent
+    b_absent = only_annotator_a + both_absent
+
+    observed = (both_present + both_absent) / total
+    expected = (
+        (a_present / total) * (b_present / total)
+        + (a_absent / total) * (b_absent / total)
+    )
+    # Kappa is undefined when expected agreement is 1 (no expected disagreement).
+    kappa = None if expected == 1.0 else (observed - expected) / (1 - expected)
+
+    return {
+        "skill": skill,
+        "both_present": both_present,
+        "only_annotator_a": only_annotator_a,
+        "only_annotator_b": only_annotator_b,
+        "both_absent": both_absent,
+        "annotator_a_positive": a_present,
+        "annotator_b_positive": b_present,
+        "observed_agreement": round(observed, 4),
+        "expected_agreement": round(expected, 4),
+        "cohen_kappa": round(kappa, 4) if kappa is not None else None,
+    }
 
 
 def compare_annotations(
@@ -113,6 +164,20 @@ def compare_annotations(
             }
         )
 
+    skill_labels = sorted(
+        {skill for _, skills in annotator_a.values() for skill in skills}
+        | {skill for _, skills in annotator_b.values() for skill in skills}
+    )
+    per_skill = [
+        _per_skill_agreement(skill, annotator_a, annotator_b)
+        for skill in skill_labels
+    ]
+    defined_kappas = [
+        item["cohen_kappa"]
+        for item in per_skill
+        if item["cohen_kappa"] is not None
+    ]
+
     record_count = len(per_role)
     return {
         "records_compared": record_count,
@@ -122,6 +187,14 @@ def compare_annotations(
         "micro_jaccard": round(
             total_intersection / total_union if total_union else 1.0, 4
         ),
+        "skill_labels_compared": len(per_skill),
+        "defined_skill_kappa_count": len(defined_kappas),
+        "mean_per_skill_cohen_kappa": (
+            round(sum(defined_kappas) / len(defined_kappas), 4)
+            if defined_kappas
+            else None
+        ),
+        "per_skill": per_skill,
         "per_role": per_role,
         "metric_notes": {
             "normalization": (
@@ -132,8 +205,15 @@ def compare_annotations(
                 "Intersection divided by union per role; if both annotators "
                 "assign no skills, Jaccard is defined as 1.0."
             ),
+            "cohen_kappa": (
+                "One-vs-rest Cohen's kappa is calculated separately for each "
+                "observed skill across roles. It is null when expected "
+                "agreement is 1.0. The mean is unweighted across defined "
+                "skill-level kappas; rare labels and small samples can make "
+                "these estimates unstable."
+            ),
             "interpretation": (
-                "Pairwise consistency only. This report does not establish "
+                "Pairwise consistency only. These statistics do not establish "
                 "semantic correctness, annotator independence, or adjudication quality."
             ),
         },
