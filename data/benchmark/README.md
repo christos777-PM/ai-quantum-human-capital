@@ -16,6 +16,26 @@ This directory contains small **synthetic examples** for exercising the benchmar
 
 Each non-empty line in evaluator JSONL is a JSON object. The `role_id` must be non-empty and unique within each file. Skill arrays must contain non-empty strings. Skills are trimmed, case-folded and compared as sets, so duplicates and capitalization differences do not affect the score.
 
+## Validate dataset provenance before empirical release
+
+Use the manifest validator to check the provenance JSON structure, date and URL formats, SHA-256 fingerprint shape, and record-count arithmetic:
+
+```bash
+python scripts/validate_manifest.py --input data/benchmark/manifest.template.json
+```
+
+The template is expected to pass structural validation while reporting that it is **not release-ready**. Once a dataset manifest is completed, add `--require-release-ready` to make missing empirical-release metadata return a non-zero exit code:
+
+```bash
+python scripts/validate_manifest.py \
+  --input path/to/dataset-manifest.json \
+  --require-release-ready
+```
+
+The release gate requires a documented source and license/terms review, retrieval date, source snapshot SHA-256, taxonomy and annotation-protocol versions, at least two annotators, non-zero double-annotation coverage, agreement and adjudication methods, deduplication and split strategies, a completed personal-data review, and internally consistent collected/included/excluded and development/held-out counts. Development and held-out counts must sum to the included count.
+
+A passing result means only that the declared metadata is complete and internally consistent. The validator cannot verify that a license permits the intended use, that a hash matches the source, that annotations are correct, that reviewers worked independently, or that the sample is representative. Those claims still require evidence and human review. Do not mark a dataset empirical merely to make the gate pass.
+
 ## Validate annotation evidence and taxonomy membership
 
 Before evaluating human annotations, validate that each canonical label is in the frozen taxonomy snapshot and linked to a quote present in its source description:
