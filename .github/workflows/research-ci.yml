@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: \${{ matrix.python-version }}
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
       - name: Smoke-test annotation taxonomy and evidence validation
@@ -26,6 +26,10 @@ jobs:
           python scripts/validate_splits.py \
             --development data/benchmark/splits/development.example.jsonl \
             --held-out data/benchmark/splits/held_out.example.jsonl
+      - name: Smoke-test provenance manifest validation and release gate
+        run: |
+          python scripts/validate_manifest.py --input data/benchmark/manifest.template.json
+          python -c "import subprocess; result=subprocess.run(['python', 'scripts/validate_manifest.py', '--input', 'data/benchmark/manifest.template.json', '--require-release-ready'], capture_output=True, text=True); assert result.returncode == 1, f'Expected the template to be blocked from empirical release; got {result.returncode}: {result.stderr}'; print('Template correctly blocked from empirical release')"
       - name: Smoke-test pairwise annotation agreement
         run: |
           python scripts/compare_annotations.py \
