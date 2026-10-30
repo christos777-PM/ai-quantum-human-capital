@@ -12,48 +12,24 @@ from urllib.parse import urlparse
 
 
 REQUIRED_FIELDS = {
-    "dataset_id",
-    "version",
-    "data_status",
-    "source_name",
-    "source_url",
-    "license_name",
-    "license_url",
-    "terms_reviewed_at",
-    "retrieved_at",
-    "collection_method",
-    "content_hash_algorithm",
-    "source_snapshot_sha256",
-    "taxonomy_version",
-    "annotation_protocol_version",
-    "annotator_count",
-    "double_annotated_fraction",
-    "agreement_method",
-    "adjudication_method",
-    "deduplication_method",
-    "split_strategy",
-    "record_counts",
-    "personal_data_review",
-    "notes",
+    "dataset_id", "version", "data_status", "source_name", "source_url",
+    "license_name", "license_url", "terms_reviewed_at", "retrieved_at",
+    "collection_method", "content_hash_algorithm", "source_snapshot_sha256",
+    "taxonomy_version", "annotation_protocol_version", "annotator_count",
+    "double_annotated_fraction", "agreement_method", "adjudication_method",
+    "deduplication_method", "split_strategy", "record_counts",
+    "personal_data_review", "notes",
 }
 COUNT_FIELDS = ("collected", "included", "excluded", "development", "held_out")
 DATA_STATUSES = {"template", "exploratory", "empirical"}
 SHA256_PATTERN = re.compile(r"^[0-9a-fA-F]{64}$")
+DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 RELEASE_TEXT_FIELDS = (
-    "source_name",
-    "source_url",
-    "license_name",
-    "license_url",
-    "terms_reviewed_at",
-    "retrieved_at",
-    "collection_method",
-    "source_snapshot_sha256",
-    "taxonomy_version",
-    "annotation_protocol_version",
-    "agreement_method",
-    "adjudication_method",
-    "deduplication_method",
-    "split_strategy",
+    "source_name", "source_url", "license_name", "license_url",
+    "terms_reviewed_at", "retrieved_at", "collection_method",
+    "source_snapshot_sha256", "taxonomy_version",
+    "annotation_protocol_version", "agreement_method", "adjudication_method",
+    "deduplication_method", "split_strategy",
 )
 
 
@@ -74,12 +50,12 @@ def _validate_url(value: Any, field: str) -> None:
 def _validate_date(value: Any, field: str) -> None:
     if value is None:
         return
-    if not isinstance(value, str):
-        raise ValueError(f"{field} must use YYYY-MM-DD or be null.")
+    if not isinstance(value, str) or not DATE_PATTERN.fullmatch(value):
+        raise ValueError(f"{field} must use YYYY-MM-DD.")
     try:
         date.fromisoformat(value)
     except ValueError as exc:
-        raise ValueError(f"{field} must use YYYY-MM-DD.") from exc
+        raise ValueError(f"{field} must use a valid YYYY-MM-DD date.") from exc
 
 
 def validate_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
@@ -100,23 +76,16 @@ def validate_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
         if not _non_empty_string(manifest[field]):
             raise ValueError(f"{field} must be a non-empty string.")
 
-    if manifest["data_status"] not in DATA_STATUSES:
+    status = manifest["data_status"]
+    if not isinstance(status, str) or status not in DATA_STATUSES:
         raise ValueError(f"data_status must be one of {sorted(DATA_STATUSES)}.")
     if manifest["content_hash_algorithm"] != "sha256":
         raise ValueError("content_hash_algorithm must be 'sha256'.")
 
     text_fields = (
-        "source_name",
-        "license_name",
-        "collection_method",
-        "taxonomy_version",
-        "annotation_protocol_version",
-        "agreement_method",
-        "adjudication_method",
-        "deduplication_method",
-        "split_strategy",
-        "personal_data_review",
-        "notes",
+        "source_name", "license_name", "collection_method", "taxonomy_version",
+        "annotation_protocol_version", "agreement_method", "adjudication_method",
+        "deduplication_method", "split_strategy", "personal_data_review", "notes",
     )
     for field in text_fields:
         value = manifest[field]
@@ -165,32 +134,34 @@ def validate_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
             raise ValueError(f"record_counts.{field} must be a non-negative integer or null.")
 
     collected, included, excluded = (
-        counts["collected"],
-        counts["included"],
-        counts["excluded"],
+        counts["collected"], counts["included"], counts["excluded"]
     )
     if all(value is not None for value in (collected, included, excluded)):
         if included + excluded != collected:
-            raise ValueError(
-                "record_counts must satisfy included + excluded = collected."
-            )
+            raise ValueError("record_counts must satisfy included + excluded = collected.")
 
     development, held_out = counts["development"], counts["held_out"]
     if included is not None and development is not None and held_out is not None:
         if development + held_out > included:
-            raise ValueError(
-                "development + held_out cannot exceed included records."
-            )
+            raise ValueError("development + held_out cannot exceed included records.")
 
     blockers = []
-    if manifest["data_status"] != "empirical":
+    if status != "empirical":
         blockers.append("data_status must be 'empirical' for an empirical release.")
     for field in RELEASE_TEXT_FIELDS:
         if not _non_empty_string(manifest[field]):
             blockers.append(f"{field} must be completed.")
-    if not isinstance(annotator_count, int) or isinstance(annotator_count, bool) or annotator_count < 2:
+    if (
+        not isinstance(annotator_count, int)
+        or isinstance(annotator_count, bool)
+        or annotator_count < 2
+    ):
         blockers.append("annotator_count must be at least 2.")
-    if not isinstance(double_fraction, (int, float)) or isinstance(double_fraction, bool) or double_fraction <= 0:
+    if (
+        not isinstance(double_fraction, (int, float))
+        or isinstance(double_fraction, bool)
+        or double_fraction <= 0
+    ):
         blockers.append("double_annotated_fraction must be greater than 0.")
     if manifest["personal_data_review"] in (None, "", "not-assessed"):
         blockers.append("personal_data_review must document a completed review.")
@@ -210,7 +181,7 @@ def validate_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
         "release_ready": not blockers,
         "dataset_id": manifest["dataset_id"],
         "version": manifest["version"],
-        "data_status": manifest["data_status"],
+        "data_status": status,
         "record_counts": counts,
         "release_blockers": blockers,
         "validation_scope": (
