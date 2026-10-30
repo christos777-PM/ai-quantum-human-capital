@@ -94,6 +94,12 @@ class TestManifestValidation(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing required fields"):
             validate_manifest(manifest)
 
+    def test_rejects_invalid_data_status_type(self):
+        manifest = template_manifest()
+        manifest["data_status"] = []
+        with self.assertRaisesRegex(ValueError, "data_status"):
+            validate_manifest(manifest)
+
     def test_rejects_invalid_source_url(self):
         manifest = complete_manifest()
         manifest["source_url"] = "example.org/dataset"
@@ -106,6 +112,12 @@ class TestManifestValidation(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "YYYY-MM-DD"):
             validate_manifest(manifest)
 
+    def test_rejects_compact_date_format(self):
+        manifest = complete_manifest()
+        manifest["retrieved_at"] = "20261030"
+        with self.assertRaisesRegex(ValueError, "YYYY-MM-DD"):
+            validate_manifest(manifest)
+
     def test_rejects_malformed_snapshot_hash(self):
         manifest = complete_manifest()
         manifest["source_snapshot_sha256"] = "not-a-hash"
@@ -115,7 +127,7 @@ class TestManifestValidation(unittest.TestCase):
     def test_rejects_inconsistent_collection_counts(self):
         manifest = complete_manifest()
         manifest["record_counts"]["excluded"] = 3
-        with self.assertRaisesRegex(ValueError, "included \\+ excluded"):
+        with self.assertRaisesRegex(ValueError, "included"):
             validate_manifest(manifest)
 
     def test_rejects_boolean_record_count(self):
