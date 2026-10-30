@@ -41,9 +41,11 @@ python scripts/compare_annotations.py \
   --output /tmp/annotation-agreement.json
 ```
 
-The report includes exact-set agreement, mean role-level Jaccard, micro Jaccard, and per-role lists of labels assigned only by either annotator. Both files must contain the same unique role IDs and each record must contain a `gold_skills` list. Label matching is exact after trimming and case-folding; synonyms are not inferred. Empty/empty skill sets are assigned Jaccard 1.0, which should be considered when interpreting the average.
+The report includes exact-set agreement, mean role-level Jaccard, micro Jaccard, per-role disagreement lists, and one-vs-rest Cohen's kappa for each observed skill across roles. Each per-skill result includes both-present, annotator-only and both-absent counts, observed agreement, expected agreement and kappa. The mean per-skill kappa is unweighted and excludes labels for which kappa is undefined because expected agreement is 1.0.
 
-These descriptive measures quantify consistency, not correctness. They are not chance-corrected and cannot prove that annotators worked independently or that adjudication was unbiased. See [the annotation agreement guide](../../docs/annotation-agreement.md) for interpretation and limitations. The committed A/B files are synthetic CI fixtures only, not empirical inter-annotator agreement results.
+Kappa can be unstable for rare skills and small samples, and prevalence affects its interpretation. Read it alongside the raw counts and descriptive set metrics; do not apply universal thresholds to a tiny sample. Both files must contain the same unique role IDs and each record must contain a `gold_skills` list. Label matching is exact after trimming and case-folding; synonyms are not inferred.
+
+These measures quantify consistency, not correctness. They do not prove annotator independence or unbiased adjudication. Agreement should be computed before adjudication. See [the annotation agreement guide](../../docs/annotation-agreement.md) for interpretation and limitations. The committed A/B files are synthetic CI fixtures only, not empirical inter-annotator agreement results.
 
 ## Check development/held-out split leakage
 
