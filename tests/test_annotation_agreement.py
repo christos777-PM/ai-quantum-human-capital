@@ -36,6 +36,48 @@ class TestCompareAnnotations(unittest.TestCase):
             report["per_role"][1]["only_annotator_b"], ["cloud computing"]
         )
 
+    def test_reports_per_skill_one_vs_rest_cohen_kappa(self):
+        a = [
+            {"role_id": "role-1", "gold_skills": ["python", "rest api"]},
+            {"role_id": "role-2", "gold_skills": ["sql"]},
+            {"role_id": "role-3", "gold_skills": []},
+        ]
+        b = [
+            {"role_id": "role-1", "gold_skills": ["python", "rest api"]},
+            {"role_id": "role-2", "gold_skills": ["sql", "cloud computing"]},
+            {"role_id": "role-3", "gold_skills": []},
+        ]
+        report = compare_annotations(a, b)
+        by_skill = {item["skill"]: item for item in report["per_skill"]}
+
+        self.assertEqual(by_skill["python"]["cohen_kappa"], 1.0)
+        self.assertEqual(by_skill["cloud computing"]["cohen_kappa"], 0.0)
+        self.assertEqual(by_skill["cloud computing"]["only_annotator_b"], 1)
+        self.assertEqual(report["defined_skill_kappa_count"], 4)
+        self.assertEqual(report["mean_per_skill_cohen_kappa"], 0.75)
+
+    def test_kappa_is_undefined_for_constant_skill_prevalence(self):
+        a = [
+            {"role_id": "role-1", "gold_skills": ["python"]},
+            {"role_id": "role-2", "gold_skills": ["python"]},
+        ]
+        b = [
+            {"role_id": "role-1", "gold_skills": ["python"]},
+            {"role_id": "role-2", "gold_skills": ["python"]},
+        ]
+        report = compare_annotations(a, b)
+        self.assertIsNone(report["per_skill"][0]["cohen_kappa"])
+        self.assertEqual(report["defined_skill_kappa_count"], 0)
+        self.assertIsNone(report["mean_per_skill_cohen_kappa"])
+
+    def test_no_skill_labels_has_no_kappa_summary(self):
+        a = [{"role_id": "role-1", "gold_skills": []}]
+        b = [{"role_id": "role-1", "gold_skills": []}]
+        report = compare_annotations(a, b)
+        self.assertEqual(report["skill_labels_compared"], 0)
+        self.assertEqual(report["per_skill"], [])
+        self.assertIsNone(report["mean_per_skill_cohen_kappa"])
+
     def test_role_id_matching_ignores_case_and_whitespace(self):
         report = compare_annotations(
             [{"role_id": " Role-1 ", "gold_skills": ["Python"]}],
