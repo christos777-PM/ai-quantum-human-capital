@@ -125,3 +125,24 @@ At minimum:
 7. Do not include personal candidate information or make individual hiring/suitability decisions from these metrics.
 
 The bundled data is only a deterministic smoke test. It does not validate the taxonomy, the extractor, or any real-world workforce claim.
+
+
+## Run the integrated empirical release audit
+
+After preparing the manifest, adjudicated annotations, development/held-out files, and two pre-adjudication annotator files, run all release checks together:
+
+```bash
+python scripts/audit_empirical_release.py \
+  --manifest path/to/manifest.json \
+  --annotations path/to/final-adjudicated.jsonl \
+  --development path/to/development.jsonl \
+  --held-out path/to/held-out.jsonl \
+  --annotator-a path/to/annotator-a.jsonl \
+  --annotator-b path/to/annotator-b.jsonl \
+  --taxonomy data/benchmark/taxonomy-v1.json \
+  --output /tmp/empirical-release-audit.json
+```
+
+The command combines manifest completeness, adjudicated annotation evidence and taxonomy checks, development/held-out leakage checks, pairwise agreement, and cross-file ID/count/coverage reconciliation. It exits with code 0 only when all declared release gates pass; code 1 means the audit ran but the dataset is blocked, and code 2 indicates invalid or unreadable inputs.
+
+A passing report is an internal-consistency preflight, not independent verification of source permissions, source authenticity, annotator independence, semantic correctness, or representativeness. The committed examples and automated tests are synthetic fixtures only. Do not interpret their passing result as an empirical release.
