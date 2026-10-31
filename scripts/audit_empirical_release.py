@@ -104,7 +104,9 @@ def audit_empirical_release(
         ),
         "annotator_files_cover_same_records": annotator_a_ids == annotator_b_ids,
         "double_annotation_fraction_matches_manifest": (
-            math.isclose(
+            isinstance(double_fraction, (int, float))
+            and not isinstance(double_fraction, bool)
+            and math.isclose(
                 observed_double_fraction,
                 double_fraction,
                 rel_tol=0.0,
