@@ -60,6 +60,8 @@ def audit_empirical_release(
         taxonomy_version=taxonomy_version,
     )
     split_report = validate_splits(development_records, held_out_records)
+    if not annotator_a_records or not annotator_b_records:
+        raise ValueError("Both annotator files must contain at least one record.")
     agreement_report = compare_annotations(annotator_a_records, annotator_b_records)
 
     for label, records in (
