@@ -1,5 +1,4 @@
 """Tests for the integrated empirical benchmark release audit."""
-import copy
 import unittest
 
 from scripts.audit_empirical_release import audit_empirical_release
