@@ -143,6 +143,6 @@ python scripts/audit_empirical_release.py \
   --output /tmp/empirical-release-audit.json
 ```
 
-The command combines manifest completeness, adjudicated annotation evidence and taxonomy checks, development/held-out leakage checks, pairwise agreement, and cross-file ID/count/coverage reconciliation. It exits with code 0 only when all declared release gates pass; code 1 means the audit ran but the dataset is blocked, and code 2 indicates invalid or unreadable inputs.
+The command validates source-text evidence and taxonomy membership for both pre-adjudication annotator files and final adjudicated annotations, then combines manifest completeness, development/held-out leakage checks, pairwise agreement, and cross-file ID/count/coverage reconciliation. Both annotator files must include each role's source description and an evidence quote for every assigned skill. It exits with code 0 only when all declared release gates pass; code 1 means the audit ran but the dataset is blocked, and code 2 indicates invalid or unreadable inputs.
 
 A passing report is an internal-consistency preflight, not independent verification of source permissions, source authenticity, annotator independence, semantic correctness, or representativeness. The committed examples and automated tests are synthetic fixtures only. Do not interpret their passing result as an empirical release.
