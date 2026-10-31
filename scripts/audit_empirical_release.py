@@ -45,8 +45,10 @@ def audit_empirical_release(
     *,
     taxonomy_path: str | Path,
 ) -> dict[str, Any]:
-    """Combine provenance, annotation, split, and agreement checks.
+    """Combine provenance, evidence, split, and agreement checks.
 
+    Both pre-adjudication annotator files and the final adjudicated file must
+    contain source descriptions and evidence quotes for every assigned label.
     A passing report verifies internal consistency only. It cannot establish
     licensing permissions, source authenticity, reviewer independence,
     semantic correctness, or sample representativeness.
@@ -62,26 +64,18 @@ def audit_empirical_release(
     split_report = validate_splits(development_records, held_out_records)
     if not annotator_a_records or not annotator_b_records:
         raise ValueError("Both annotator files must contain at least one record.")
-    agreement_report = compare_annotations(annotator_a_records, annotator_b_records)
 
-    for label, records in (
-        ("Annotator A", annotator_a_records),
-        ("Annotator B", annotator_b_records),
-    ):
-        for index, record in enumerate(records, start=1):
-            skills = record.get("gold_skills")
-            if not isinstance(skills, list) or any(
-                not isinstance(skill, str) or not skill.strip() for skill in skills
-            ):
-                raise ValueError(f"{label} record {index} must contain non-empty gold_skills.")
-            unknown = sorted(
-                {skill.strip().casefold() for skill in skills} - allowed_skills
-            )
-            if unknown:
-                raise ValueError(
-                    f"{label} record {index} contains labels outside taxonomy "
-                    f"{taxonomy_version}: {unknown}."
-                )
+    annotator_a_report = validate_annotation_records(
+        annotator_a_records,
+        allowed_skills=allowed_skills,
+        taxonomy_version=taxonomy_version,
+    )
+    annotator_b_report = validate_annotation_records(
+        annotator_b_records,
+        allowed_skills=allowed_skills,
+        taxonomy_version=taxonomy_version,
+    )
+    agreement_report = compare_annotations(annotator_a_records, annotator_b_records)
 
     final_ids = _role_ids(final_annotations, "Final annotations")
     development_ids = _role_ids(development_records, "Development split")
@@ -129,6 +123,10 @@ def audit_empirical_release(
         "version": manifest_report["version"],
         "manifest": manifest_report,
         "annotations": annotation_report,
+        "annotators": {
+            "annotator_a": annotator_a_report,
+            "annotator_b": annotator_b_report,
+        },
         "splits": split_report,
         "agreement": agreement_report,
         "checks": checks,

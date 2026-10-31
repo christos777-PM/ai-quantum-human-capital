@@ -35,7 +35,7 @@ def complete_manifest():
             "held_out": 1,
         },
         "personal_data_review": "Synthetic fixtures contain no personal data",
-        "notes": "In-memory unit-test data only; not an empirical dataset.",
+        "notes": "In-memory synthetic unit-test data only; not an empirical dataset.",
     }
 
 
@@ -58,8 +58,24 @@ def fixture_records():
     ]
     development = [{"role_id": "role-dev", "description": "Python delivery experience."}]
     held_out = [{"role_id": "role-test", "description": "SQL reporting experience."}]
-    annotator_a = [{"role_id": "role-dev", "gold_skills": ["python"]}]
-    annotator_b = [{"role_id": "role-dev", "gold_skills": ["python"]}]
+    annotator_a = [
+        {
+            "role_id": "role-dev",
+            "description": "Python delivery experience.",
+            "gold_skills": ["python"],
+            "evidence": [{"skill": "python", "quote": "Python"}],
+            "annotation_status": "draft",
+        }
+    ]
+    annotator_b = [
+        {
+            "role_id": "role-dev",
+            "description": "Python delivery experience.",
+            "gold_skills": ["python"],
+            "evidence": [{"skill": "python", "quote": "Python"}],
+            "annotation_status": "draft",
+        }
+    ]
     return final_annotations, development, held_out, annotator_a, annotator_b
 
 
@@ -84,6 +100,12 @@ class TestEmpiricalReleaseAudit(unittest.TestCase):
         self.assertTrue(all(report["checks"].values()))
         self.assertEqual(report["observed_double_annotated_fraction"], 0.5)
         self.assertEqual(report["agreement"]["records_compared"], 1)
+        self.assertEqual(
+            report["annotators"]["annotator_a"]["records_validated"], 1
+        )
+        self.assertEqual(
+            report["annotators"]["annotator_b"]["records_validated"], 1
+        )
 
     def test_incomplete_manifest_is_reported_as_blocked(self):
         manifest = complete_manifest()
@@ -116,7 +138,26 @@ class TestEmpiricalReleaseAudit(unittest.TestCase):
     def test_annotator_labels_must_belong_to_taxonomy(self):
         records = fixture_records()
         records[3][0]["gold_skills"] = ["invented skill"]
-        with self.assertRaisesRegex(ValueError, "outside taxonomy"):
+        records[3][0]["evidence"] = [
+            {"skill": "invented skill", "quote": "Python"}
+        ]
+        with self.assertRaisesRegex(ValueError, "not in taxonomy"):
+            self.audit(records=records)
+
+    def test_pre_adjudication_annotator_records_require_evidence(self):
+        for annotator_index in (3, 4):
+            with self.subTest(annotator_index=annotator_index):
+                records = fixture_records()
+                records[annotator_index][0].pop("evidence")
+                with self.assertRaisesRegex(ValueError, "must contain an evidence list"):
+                    self.audit(records=records)
+
+    def test_pre_adjudication_evidence_quote_must_appear_in_description(self):
+        records = fixture_records()
+        records[3][0]["evidence"] = [
+            {"skill": "python", "quote": "GraphQL"}
+        ]
+        with self.assertRaisesRegex(ValueError, "does not appear in description"):
             self.audit(records=records)
 
 
